@@ -15,16 +15,17 @@ def main(args: argparse.Namespace) -> None:
         tsv_writer = csv.writer(sink, delimiter="\t")
         for row in tsv_reader:
             matchObj = re.match(r"(\w+)(\-)(\w+)", row[1])
+            matchObj_2 = re.match(r"(\w+)", row[1])
             if matchObj:
                 row = [
                     matchObj.group(1),
                     matchObj.group(1) + matchObj.group(3),
                 ]
                 # write an assertion here
-                assert ("aru", "arumia")
-                assert not ("aru", "aru-mia")
-            else:
-                row = [matchObj.group(1), matchObj.group(1)]
+            elif matchObj_2:
+                row = [matchObj_2.group(1), matchObj_2.group(1)]
+        # assert "aru" == matchObj.group(1)
+        # assert "mia" == matchObj.group(3)
 
 
 if __name__ == "__main__":
