@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 """This script counts the numbers of passive suffixes attached to verbs in
-     Maori.The verbs going through internal change are not accounted for via
-     this script."""
+     Maori.The verbs going through various internal changes are not accounted
+     for in this script."""
 
 import argparse
 import csv
-import collections
+import logging
+# import collections
 
 import pynini
 
@@ -14,6 +15,7 @@ from pynini.lib import pynutil
 from pynini.lib import rewrite
 from collections import Counter
 
+logging.basicConfig(filename="info.log", level=logging.DEBUG)
 
 # The alphabet: https://teara.govt.nz/en/interactive/41063/the-maori-alphabet
 # "ng" and "wh" are diagraphs, but we treat them as separete characters."
@@ -117,8 +119,6 @@ rule_dict = {
     "tanga": tanga_rule,
 }
 
-# rule_counts = collections.Counter()
-
 
 def main(args: argparse.Namespace) -> None:
     rule_counts = Counter()
@@ -127,15 +127,22 @@ def main(args: argparse.Namespace) -> None:
         for lemma, passive in tsv_reader:
             for rule_name, rule in rule_dict.items():
                 rule_found = False  # Using a Boolean expression in the loop
-                if rewrite.matches(lemma, passive, rule):
-                    rule_counts.update()
-                    rule_found = True
-                    # "If some condition is true, I'll take this branch down
-                    # my code."
-                    break
-                if not rule_found:
-                    print(f"No rules found for {lemma} -> {passive}")
-        print(rule_name, "\t", rule_counts)
+                try:
+                    if rewrite.matches(lemma, passive, rule):
+                        rule_counts[rule_name] += 1
+                        rule_found = True
+                        # "If some condition is true, I'll take this branch
+                        # down my code."
+                        break
+                except rewrite.Error:
+                    # pass
+                    logging.warning("Composition Failure: %s\t\t%s", lemma, passive)
+            if not rule_found:
+                logging.info("No Rules Found: %s\t\t%s", lemma, passive)
+                print(f"No rules found for {lemma} -> {passive}")
+                rule_counts["<Irregular>"] += 1
+    for rule_name, count in rule_counts.most_common():
+        print(f"{rule_name}:\t{count}")
 
 
 if __name__ == "__main__":
